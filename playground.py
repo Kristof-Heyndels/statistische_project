@@ -4,7 +4,7 @@ grid = []
 row_size = 0
 col_size = 0
 fraction = 0.05
-adhesion_prob = 1
+adhesion_prob = 0.01
 dentric_height = 1
 simulated_stepts = pow(10,6)
 
@@ -12,7 +12,7 @@ free_particles = []
 growth = []
     
 def main():
-    init_grid(35,50)
+    init_grid(50,35)
 
     N = int(fraction * row_size * col_size)
     for i in range(N):
@@ -77,13 +77,15 @@ def move_random_particle():
         grid[r][c] = 0
         grid[r+dr][c+dc] = 1
         #checking if particle attaches to growth
-        #TODO: include adhesion probability S
         if [r+dr+1,c+dc] in growth \
         or [r+dr-1,c+dc] in growth \
         or [r+dr,c+dc+1] in growth \
         or [r+dr,c+dc-1] in growth \
         or r+dr == 0:
-            growth.append([r+dr,c+dc])
+            if np.random.uniform(0, 1) < adhesion_prob:
+                growth.append([r+dr,c+dc])
+            else:
+                free_particles.append([r+dr,c+dc])
         else :
             free_particles.append([r+dr,c+dc])  
 
