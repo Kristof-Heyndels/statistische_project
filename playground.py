@@ -1,5 +1,7 @@
 import numpy as np
 
+#TODO: keep f above dentric_height constant
+
 grid = []
 row_size = 0
 col_size = 0
