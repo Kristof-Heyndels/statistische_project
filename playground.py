@@ -5,25 +5,27 @@ import numpy as np
 grid = []
 row_size = 0
 col_size = 0
-fraction = 0.05
+concentration = 0.05
 adhesion_prob = 0.01
 dentric_height = 1
 simulated_stepts = pow(10,6)
 
 free_particles = []
 growth = []
+
+PRINT_GRID = True
     
 def main():
-    init_grid(50,35)
+    init_grid(100,35)
 
-    N = int(fraction * row_size * col_size)
+    N = int(concentration * row_size * col_size)
     for i in range(N):
         fill_random_square()
     
     for t in range(simulated_stepts):
         move_random_particle()
 
-    print_grid(1)
+    print_grid(PRINT_GRID)
     print("Free Particles: ", len(free_particles))
     print("Growth Size: ", len(growth))
 
@@ -86,6 +88,17 @@ def move_random_particle():
         or r+dr == 0:
             if np.random.uniform(0, 1) < adhesion_prob:
                 growth.append([r+dr,c+dc])
+
+                #updating height of dentric growth
+                global dentric_height
+                if r+dr > dentric_height:
+                    dentric_height = r+dr
+
+                global concentration
+                #adjusting concentration
+                if len(free_particles) / (row_size * col_size) < concentration:
+                    fill_random_square()
+
             else:
                 free_particles.append([r+dr,c+dc])
         else :
@@ -96,10 +109,8 @@ def move_random_particle():
 
 def print_grid(b):
     if b:
-        print("================================================================")
         for i in range(len(grid)):
             print(grid[i])
-        print("================================================================")
 
 if __name__ == "__main__":
     main()
