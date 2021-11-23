@@ -1,14 +1,13 @@
 import numpy as np
-
-#TODO: keep f above dentric_height constant
+import os
 
 grid = []
 row_size = 0
 col_size = 0
-concentration = 0.05
+concentration = 0.4
 adhesion_prob = 0.01
 dentric_height = 1
-simulated_stepts = pow(10,6)
+simulated_stepts = pow(10,3)
 
 free_particles = []
 growth = []
@@ -16,7 +15,7 @@ growth = []
 PRINT_GRID = True
     
 def main():
-    init_grid(100,35)
+    init_grid(500,100)
 
     N = int(concentration * row_size * col_size)
     for i in range(N):
@@ -25,7 +24,8 @@ def main():
     for t in range(simulated_stepts):
         move_random_particle()
 
-    print_grid(PRINT_GRID)
+    print_grid(not PRINT_GRID)
+    print_grid_to_file(PRINT_GRID)
     print("Free Particles: ", len(free_particles))
     print("Growth Size: ", len(growth))
 
@@ -56,6 +56,7 @@ def move_random_particle():
     l = len(free_particles)
     if l > 0:
         p = np.random.randint(0,len(free_particles))
+        #print(f"Selected random particle: {free_particles[p]}")
     else:
         return
     
@@ -77,15 +78,17 @@ def move_random_particle():
         dc = -1
     
     #particles are not allowed to interact with each other
-    if not grid[r+dr][c+dc] == 1:        
+    if not grid[r+dr][c+dc] == 1:   
+        
+        #print(f"MOVING FROM: [{r},{c}] TO [{r+dr},{c+dc}]")     
         grid[r][c] = 0
         grid[r+dr][c+dc] = 1
+
         #checking if particle attaches to growth
         if [r+dr+1,c+dc] in growth \
         or [r+dr-1,c+dc] in growth \
         or [r+dr,c+dc+1] in growth \
-        or [r+dr,c+dc-1] in growth \
-        or r+dr == 0:
+        or [r+dr,c+dc-1] in growth:
             if np.random.uniform(0, 1) < adhesion_prob:
                 growth.append([r+dr,c+dc])
 
@@ -101,16 +104,44 @@ def move_random_particle():
 
             else:
                 free_particles.append([r+dr,c+dc])
+        elif r+dr == 0:
+            growth.append([r+dr,c+dc])
         else :
             free_particles.append([r+dr,c+dc])  
 
-        free_particles.remove([r,c])
-        #print(f"MOVING FROM: [{r},{c}] TO [{r+dr},{c+dc}]")
+        #print(f"particle to pop: {free_particles[p]}")
+        free_particles[p] = free_particles.pop()
 
 def print_grid(b):
     if b:
         for i in range(len(grid)):
             print(grid[i])
+
+def print_grid_to_file(b):
+    global adhesion_prob
+    global concentration
+
+    dirname = os.path.dirname(__file__)
+    filepath = os.path.join(dirname, f'material_S={adhesion_prob}_f={concentration}/')
+
+    if b:
+        #cleaning free particles
+        for p in free_particles:
+            grid[p[0]][p[1]] = 0
+
+        #creating dir
+        if not os.path.exists(os.path.dirname(filepath)):
+            try:
+              os.makedirs(os.path.dirname(filepath))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                   raise
+
+        with open(f'{filepath}test.txt', 'w') as file:
+            for i in range(len(grid)):
+                for j in range(len(grid[i])):
+                    file.write(str(grid[i][j]))
+                file.write("\n")
 
 if __name__ == "__main__":
     main()
