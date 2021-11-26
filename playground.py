@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import timeit
 
 grid = []
 row_size = 0
@@ -7,15 +8,16 @@ col_size = 0
 concentration = 0.4
 adhesion_prob = 0.01
 dentric_height = 1
-simulated_stepts = pow(10,3)
+simulated_stepts = pow(10,0)
 
 free_particles = []
 growth = []
 
 PRINT_GRID = True
+RUN_TIMES = []
     
 def main():
-    init_grid(500,100)
+    init_grid(1000,10)
 
     N = int(concentration * row_size * col_size)
     for i in range(N):
@@ -26,8 +28,6 @@ def main():
 
     print_grid(not PRINT_GRID)
     print_grid_to_file(PRINT_GRID)
-    print("Free Particles: ", len(free_particles))
-    print("Growth Size: ", len(growth))
 
 def init_grid(row_s, col_s):
     global row_size 
@@ -53,6 +53,7 @@ def fill_random_square():
         free_particles.append([row,col])
 
 def move_random_particle():
+    start = timeit.default_timer()
     l = len(free_particles)
     if l > 0:
         p = np.random.randint(0,len(free_particles))
@@ -112,6 +113,10 @@ def move_random_particle():
         #print(f"particle to pop: {free_particles[p]}")
         free_particles[p] = free_particles.pop()
 
+    
+    stop = timeit.default_timer()
+    RUN_TIMES.append(stop - start)
+
 def print_grid(b):
     if b:
         for i in range(len(grid)):
@@ -126,8 +131,9 @@ def print_grid_to_file(b):
 
     if b:
         #cleaning free particles
-        for p in free_particles:
-            grid[p[0]][p[1]] = 0
+        #for p in free_particles:
+            #grid[p[0]][p[1]] = 0
+        print(RUN_TIMES)
 
         #creating dir
         if not os.path.exists(os.path.dirname(filepath)):
