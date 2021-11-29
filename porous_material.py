@@ -5,7 +5,7 @@ grid = []
 row_size = 0
 col_size = 0
 concentration = 0.4
-adhesion_prob = 1
+adhesion_prob = 0.8
 dentric_height = 1
 allowed_zone_height = 0
 simulated_steps = pow(10,6)
@@ -14,7 +14,7 @@ free_particles = []
 growth = []
 
 def main():
-    for k in range(10):
+    for k in range(100):
         init_grid(1000,50)
 
         N = int(concentration * allowed_zone_height * col_size)
@@ -140,8 +140,8 @@ def print_grid_to_file(k):
     global adhesion_prob
     global concentration
 
-    dirname = os.path.dirname(__file__)
-    #dirname = ""
+    #dirname = os.path.dirname(__file__)
+    dirname = ""
     filepath = os.path.join(dirname, f'material_S={adhesion_prob}_f={concentration}/')
 
     #cleaning free particles
