@@ -3,8 +3,8 @@ import os
 import time
 import matplotlib.pyplot as plt
 
-sample_count = 1
-ensemble_size = 1
+sample_count = 50
+ensemble_size = 100
 min_slice_height = 1
 max_slice_height = 50
 simulated_steps = pow(10, 3)
@@ -16,7 +16,7 @@ sample_width = 250
 sample_height = 800
 starting_row = 1
 
-a_up = 0.12  # prob to move upwards, for a > 1/9 there is an upwards bias 
+a_up = 0.12  # prob to move upwards, for a = 0.2 we have a_up = 2*a_remaining
 # defining all steps
 step_no_step = [0, 0]
 step_ldiag_up = [-1, -1]
@@ -32,20 +32,19 @@ remaining_steps = (step_no_step, step_down, step_left, step_right,
 
 def main():
     global a_up
-    times = []
-    results = init_results(max_slice_height)
     while a_up <= 0.5:
+        times = []
+        results = init_results(max_slice_height)
         for k in range(sample_count):
             t_0 = time.time()
             for d in range(min_slice_height, max_slice_height + 1):
-                grid.clear()
-                grid = load_crystal(k, d)
+                load_crystal(k, d)
                 for n in range(ensemble_size):
                     # init for t=0
                     p = create_particle(d+2)
                     is_filtered = True
                     for t in range(simulated_steps):
-                        p = step(p, a_up)
+                        p = step(p)
                         if p[0] == 1:
                             is_filtered = False
                             break
@@ -57,24 +56,27 @@ def main():
             # guesstimating eta
             times.append(time.time() - t_0)
             avg = sum(times) / (k+1)
-            projected_total_duration = avg * sample_count * ((0.5 - 0.12) / 0.01)
+            projected_total_duration = avg * sample_count
             estimated_eta = projected_total_duration - (k * avg)
-            print(f"{k}: Simulation finish eta: {round(estimated_eta / 60)} minutes")
+            print(
+                f"{k}: Using a_up = {a_up}, simulation finish eta: {round(estimated_eta / 60)} minutes")
 
         keys = list(results.keys())
         norm_vals = [x / (sample_count * ensemble_size)
-                    for x in list(results.values())]
+                     for x in list(results.values())]
 
         save_plot(init_plot(keys, norm_vals))
+        plt.show()
         save_plot_data(results, norm_vals)
-        a_up += 0.01
+        a_up += 0.02
+        a_up = np.round(a_up, 2)
 
 
 def create_particle(srow):
     return [srow, np.random.randint(0, sample_width, dtype=int)]
 
 
-def step(p, a_up):
+def step(p):
     #print(f"initial p: {p}")
     if np.random.uniform(0, 1) < a_up:
         step = [-1, 0]
@@ -112,7 +114,7 @@ def load_crystal(k, h):
     filepath = os.path.join(
         dirname, f'data/material_S={adhesion_prob}_f={concentration}/')
 
-    g = []
+    grid.clear()
     with open(f'{filepath}mat_{k}.txt', 'r') as file:
         height = 1
         for line in file:
@@ -123,16 +125,14 @@ def load_crystal(k, h):
                         row.append(int(char))
             else:
                 row = np.zeros(sample_width, dtype=int)
-            g.append(np.array(row))
+            grid.append(np.array(row))
             height += 1
-    return g
 
 
 def init_results(d):
     res = {}
     for i in range(min_slice_height, d + 1):
         res[i] = 0
-    print(list(res.keys()))
     return res
 
 
