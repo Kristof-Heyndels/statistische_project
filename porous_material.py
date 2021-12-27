@@ -1,62 +1,66 @@
 import numpy as np
 import os
+import time
+import datetime
+import matplotlib.pyplot as plt
+from matplotlib import colors
 
 grid = []
-row_size = 0
-col_size = 0
+row_size = 500
+col_size = 25
+allowed_zone_height = row_size * 0.05
 concentration = 0.4
-adhesion_prob = 0.8
+adhesion_prob = 0.5
 dentric_height = 1
-allowed_zone_height = 0
-simulated_steps = pow(10,6)
+working_volume = dentric_height + allowed_zone_height * col_size
+desired_crystal_size = 20
+desired_samples = 1
 
 free_particles = []
-growth = []
+growth = {(0, 0)}
+
 
 def main():
-    for k in range(100):
-        init_grid(1000,50)
+    times = []
+    for k in range(desired_samples):
+        t_0 = time.time()
+        init_grid()
 
-        N = int(concentration * allowed_zone_height * col_size)
+        N = int(concentration * working_volume)
         for i in range(N):
             fill_random_square()
 
-        for t in range(simulated_steps):
-            #print(f"{t:.2e}")
-            move_random_particle()
+        while dentric_height < desired_crystal_size:
+            move_particles()
 
-        #print_grid()
-        print_grid_to_file(k)
-        print(f"Crystal size: {len(growth)}")
-    
-def init_grid(row_s, col_s):
-    global row_size 
-    row_size = row_s
+        #print_grid_to_file(k)
+        print_grid()
+        print(f"Finished material sample: {k}")
 
-    global col_size
-    col_size = col_s
+        # guesstimating eta
+        times.append(time.time() - t_0)
+        avg = sum(times) / (k+1)
+        projected_total_duration = avg * desired_samples
+        estimated_eta = projected_total_duration - (k * avg)
+        print(f"Simulation finish eta (minutes): {estimated_eta / 60}")
 
-    global allowed_zone_height 
-    allowed_zone_height = row_size * 0.2
 
-    global growth
-    growth.clear()
-
-    global free_particles
-    free_particles.clear()
-
-    global grid
+def init_grid():
+    # resetting for new simulation
     grid.clear()
+    free_particles.clear()
+    growth.clear()
 
     global dentric_height
     dentric_height = 1
 
     grid.append(np.ones(col_size, dtype=int))
-    for j in range (col_size):
-      growth.append([0,j])
+    for j in range(col_size):
+        growth.add((0, j))
 
     for i in range(row_size - 1):
         grid.append(np.zeros(col_size, dtype=int))
+
 
 def fill_random_square():
     b = True
@@ -64,95 +68,104 @@ def fill_random_square():
     while b:
         i += 1
         upper_bound = min(dentric_height + allowed_zone_height, row_size)
-        if dentric_height + 1 >= upper_bound:
-          return
-        row = np.random.randint(dentric_height + 1,upper_bound,dtype=int)
-        col = np.random.randint(0,col_size, dtype=int)
-        b =  grid[row][col]
+        if dentric_height + 1 >= row_size:
+            return
+        row = np.random.randint(dentric_height + 10, upper_bound, dtype=int)
+        col = np.random.randint(0, col_size, dtype=int)
+        b = grid[row][col]
     grid[row][col] = 1
+    free_particles.append([row, col])
 
-    if row == 0:
-        growth.append([row,col])
-    else:
-        free_particles.append([row,col])
 
-def move_random_particle():
-    l = len(free_particles)
-    if l > 0:
-        p = np.random.randint(0,len(free_particles))
-        #print(f"Selected random particle: {free_particles[p]} with index: {p}")
-    else:
-        return
-    
-    r = free_particles[p][0]
-    c = free_particles[p][1]
+def move_particles():
+    for p in range(len(free_particles)):
+        if p < len(free_particles):
+            r = free_particles[p][0]
+            c = free_particles[p][1]
 
-    dr = np.random.randint(-1,2,dtype=int)
-    dc = np.random.randint(-1,2, dtype=int)    
+            dr = np.random.randint(-1, 2, dtype=int)
+            dc = np.random.randint(-1, 2, dtype=int)
 
-    #checking collisions with borders
-    if r+dr < 0: #This collision should never happen. Including it anyway.
-        dr = 1
-    elif r+dr >= row_size:
-        dr = -1
-    
-    if c+dc < 0:
-        dc = 1
-    elif c+dc >= col_size:
-        dc = -1
-    
-    #particles are not allowed to interact with each other
-    if not grid[r+dr][c+dc] == 1:           
-        #print(f"MOVING FROM: [{r},{c}] TO [{r+dr},{c+dc}]")     
+            new_pos = update_position_after_step(r, dr, c, dc)
+            if not has_grown(new_pos):
+                free_particles[p] = [new_pos[0], new_pos[1]]
+            else:
+                free_particles[p] = free_particles[len(free_particles) - 1]
+                free_particles.pop()
+                growth.add((new_pos[0], new_pos[1]))
+        else:
+            break
+
+
+def update_position_after_step(r, dr, c, dc):
+    # do nothing if colliding with border
+    if r+dr < 0 \
+        or c+dc < 0 \
+        or r+dr >= row_size \
+            or c+dc >= col_size:
+        return [r, c]
+
+    # particles are not allowed to interact with each other
+    if not grid[r+dr][c+dc] == 1:
         grid[r][c] = 0
         grid[r+dr][c+dc] = 1
+        return [r+dr, c+dc]
+    else:
+        return [r, c]
 
-        #checking if particle attaches to growth
-        if [r+dr+1,c+dc] in growth \
-        or [r+dr-1,c+dc] in growth \
-        or [r+dr,c+dc+1] in growth \
-        or [r+dr,c+dc-1] in growth:
 
-            if np.random.uniform(0, 1) < adhesion_prob:
-                growth.append([r+dr,c+dc])
+def has_grown(pos):
+    r = pos[0]
+    c = pos[1]
 
-            #updating height of dentric growth
-            global dentric_height
-            if r+dr > dentric_height:
-                dentric_height = r+dr     
+    # checking if particle attaches to growth
+    if (r+1, c) in growth \
+            or (r-1, c) in growth \
+            or (r, c+1) in growth \
+            or (r, c-1) in growth:
+        if np.random.uniform(0, 1) < adhesion_prob:
+            growth.add((r, c))
 
-            global concentration
-            #adjusting concentration
-            if len(free_particles) / (row_size * col_size) < concentration:
-                fill_random_square()
-                
-        else:
-            free_particles.append([r+dr,c+dc])
+        # updating height of dentric growth
+        global dentric_height
+        if r > dentric_height:
+            dentric_height = r
 
-        #free_particles.remove([r,c])
-        free_particles[p] = free_particles.pop()
+        # adjusting concentration
+        if len(free_particles) / working_volume < concentration:
+            fill_random_square()
+        return True
+    return False
+
 
 def print_grid():
+    # cleaning free particles
+    for p in free_particles:
+        grid[p[0]][p[1]] = 0
+
     for i in range(len(grid)):
         print(grid[i])
 
-def print_grid_to_file(k):
+
+def print_grid_to_file(k, clean_file=True):
     global adhesion_prob
     global concentration
 
     #dirname = os.path.dirname(__file__)
     dirname = ""
-    filepath = os.path.join(dirname, f'material_S={adhesion_prob}_f={concentration}/')
+    filepath = os.path.join(
+        dirname, f'material_S={adhesion_prob}_f={concentration}/')
 
-    #cleaning free particles
-    for p in free_particles:
-        grid[p[0]][p[1]] = 0
+    # cleaning free particles
+    if clean_file:
+        for p in free_particles:
+            grid[p[0]][p[1]] = 0
 
-    #creating dir
+    # creating dir
     if not os.path.exists(os.path.dirname(filepath)):
         try:
-          os.makedirs(os.path.dirname(filepath))
-        except OSError as exc: # Guard against race condition
+            os.makedirs(os.path.dirname(filepath))
+        except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
 
@@ -170,6 +183,30 @@ def print_grid_to_file(k):
             for j in range(len(grid[i])):
                 file.write(str(grid[i][j]))
             file.write("\n")
+
+    plot(k, filepath)
+
+
+def plot(k, path):
+    image_path = os.path.join(path, 'img/')
+
+    # creating dir
+    if not os.path.exists(os.path.dirname(image_path)):
+        try:
+            os.makedirs(os.path.dirname(image_path))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
+    cmap_growth = colors.ListedColormap(['white', 'black'])
+    bounds = [0, .5, 1]
+    norm = colors.BoundaryNorm(bounds, cmap_growth.N)
+
+    # Plot crystal
+    plt.figure(figsize=(200, 200))
+    plt.imsave(f'{image_path}mat_{k}.png', grid, cmap=cmap_growth)
+    plt.show()
+
 
 if __name__ == "__main__":
     main()
