@@ -1,20 +1,19 @@
 import numpy as np
 import os
 import time
-import datetime
 import matplotlib.pyplot as plt
 from matplotlib import colors
 
 grid = []
-row_size = 500
-col_size = 25
+row_size = 800
+col_size = 250
 allowed_zone_height = row_size * 0.05
 concentration = 0.4
-adhesion_prob = 0.5
+adhesion_prob = 0.01
 dentric_height = 1
 working_volume = dentric_height + allowed_zone_height * col_size
-desired_crystal_size = 20
-desired_samples = 1
+desired_crystal_size = 400
+desired_samples = 50
 
 free_particles = []
 growth = {(0, 0)}
@@ -33,8 +32,7 @@ def main():
         while dentric_height < desired_crystal_size:
             move_particles()
 
-        #print_grid_to_file(k)
-        print_grid()
+        print_grid_to_file(k)
         print(f"Finished material sample: {k}")
 
         # guesstimating eta
@@ -42,7 +40,7 @@ def main():
         avg = sum(times) / (k+1)
         projected_total_duration = avg * desired_samples
         estimated_eta = projected_total_duration - (k * avg)
-        print(f"Simulation finish eta (minutes): {estimated_eta / 60}")
+        print(f"Simulation finish eta: {round(estimated_eta / 60)} minutes")
 
 
 def init_grid():
