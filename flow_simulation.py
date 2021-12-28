@@ -1,3 +1,5 @@
+### FLOW ###
+
 import numpy as np
 import os
 import time
@@ -5,8 +7,8 @@ import matplotlib.pyplot as plt
 
 sample_count = 1
 ensemble_size = 1
-min_slice_height = 10
-max_slice_height = 10
+min_slice_height = 5
+max_slice_height = 5
 simulated_steps = pow(10, 3)
 
 grid = []
@@ -32,42 +34,51 @@ remaining_steps = (step_no_step, step_down, step_left, step_right,
 
 
 def main():
-    global a_up
-    while a_up <= 0.2:
-        times = []
-        results = init_results(max_slice_height)
-        for k in range(sample_count):
-            t_0 = time.time()
-            for d in range(min_slice_height, max_slice_height + 1):
-                load_crystal(k, d)
-                # init for t=0
-                particles = []
+    times = []
+    results = init_results(max_slice_height)
+    for k in range(sample_count):
+        t_0 = time.time()
+        for d in range(min_slice_height, max_slice_height + 1):
+            load_crystal(k, d)
+            # init for t=0
+            particles = []
+            outgoing_particles = 0
+
+            for t in range(simulated_steps):
+                # each time step, n amount of particles enter the experiment
                 for n in range(incoming_flow):
                     particles.append(create_particle(d+5))
 
-                for t in range(simulated_steps):
-                    for i in range(len(particles)):
+                # iterate over each particle, allowing it to take a single step
+                for i in range(len(particles)):
+                    if i < len(particles):
                         p = particles[i]
+                        grid[p[0]][p[1]] = 0
+                        #print(f"====== \nmoving particle: {p} ... ")
                         p = step(p)
-                        print(p)
-                        grid[p[0]][p[1]] = i + 1
+                        grid[p[0]][p[1]] = 9
+                        #print(f"moved to {p} \n======")
                         if p[0] == 0:
-                            print("removing particle from grid")
-                            particles[i] = particles.pop()
-                        
-                        if len(particles) == 0:
-                            break
+                            grid[p[0]][p[1]] = 0    
+                            outgoing_particles += 1
+                            particles[i] = particles[len(particles) - 1]
+                            particles.pop()
 
-                print_grid_to_file(k, d)
-                print(len(particles))
-
-            # guesstimating eta
-            times.append(time.time() - t_0)
-            avg = sum(times) / (k+1)
-            projected_total_duration = avg * sample_count
-            estimated_eta = projected_total_duration - (k * avg)
+                    else:
+                        break
+            outgoing_flow = outgoing_particles / simulated_steps
             print(
-                f"{k}: Using a_up = {a_up}, simulation finish eta: {round(estimated_eta / 60)} minutes")
+                f"{outgoing_particles} Particles passed the filter. The outgoing flow is {outgoing_flow}.")
+
+            print_grid_to_file(k, d)
+
+        # guesstimating eta
+        times.append(time.time() - t_0)
+        avg = sum(times) / (k+1)
+        projected_total_duration = avg * sample_count
+        estimated_eta = projected_total_duration - (k * avg)
+        print(
+            f"{k}: Using a_up = {a_up}, simulation finish eta: {round(estimated_eta / 60)} minutes")
 
         keys = list(results.keys())
         norm_vals = [x / (sample_count * ensemble_size)
@@ -76,8 +87,6 @@ def main():
         #save_plot(init_plot(keys, norm_vals))
         # plt.show()
         #save_plot_data(results, norm_vals)
-        a_up += 0.02
-        a_up = np.round(a_up, 2)
 
 
 def create_particle(srow):
@@ -104,9 +113,9 @@ def check_collision_in_path(p, step):
     ncol = p[1]+step[1]
 
     #print(f"stepping from {p} using step {step} to {[nrow,ncol]}")
-    if nrow < 0 or nrow > sample_height - 1 \
-            or ncol < 0 or ncol > sample_width - 1 \
-            or grid[nrow][ncol] == 0:
+    if nrow >= 0 and nrow < sample_height - 1 \
+            and ncol >= 0 and ncol < sample_width - 1 \
+            and grid[nrow][ncol] == 0:
         return False
     return True
 
@@ -175,7 +184,7 @@ def print_grid_to_file(k, d, clean_file=True):
             if exc.errno != errno.EEXIST:
                 raise
 
-    with open(f'{filepath}{d}_cleaned.txt', 'w') as file:
+    with open(f'{filepath}flow_cleaned.txt', 'w') as file:
         for i in range(len(grid)):
             for j in range(len(grid[i])):
                 if not grid[i][j] == 0:
@@ -184,7 +193,7 @@ def print_grid_to_file(k, d, clean_file=True):
                     file.write(" ")
             file.write("\n")
 
-    with open(f'{filepath}{d}.txt', 'w') as file:
+    with open(f'{filepath}flow.txt', 'w') as file:
         for i in range(len(grid)):
             for j in range(len(grid[i])):
                 file.write(str(grid[i][j]))
