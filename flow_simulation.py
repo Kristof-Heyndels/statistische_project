@@ -5,7 +5,7 @@ import os
 import time
 import matplotlib.pyplot as plt
 
-sample_count = 1
+sample_count = 50
 ensemble_size = 1
 min_slice_height = 5
 max_slice_height = 5
@@ -70,7 +70,7 @@ def main():
             print(
                 f"{outgoing_particles} Particles passed the filter. The outgoing flow is {outgoing_flow}.")
 
-            print_grid_to_file(k, d)
+            #print_grid_to_file(k, d)
 
         # guesstimating eta
         times.append(time.time() - t_0)
