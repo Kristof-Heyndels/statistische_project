@@ -32,44 +32,45 @@ remaining_steps = (step_no_step, step_down, step_left, step_right,
 
 
 def main():
-  global a_up_min
-  while a_up_min <= a_up_max:
-      times = []
-      results = init_results(max_slice_height)
-      for k in range(sample_count):
-          t_0 = time.time()
-          for d in range(min_slice_height, max_slice_height + 1):
-              load_crystal(k, d)
-              for n in range(ensemble_size):
-                  # init for t=0
-                  p = create_particle(d+2)
-                  is_filtered = True
-                  for t in range(simulated_steps):
-                      p = step(p)
-                      if p[0] == 1:
-                          is_filtered = False
-                          break
-                  if not is_filtered:
-                      results[d] += 1
-                  # print(f"d: {d}, result: {is_filtered}")
-                  #print_grid_to_file(k, d)
+    global a_up_min
+    while a_up_min <= a_up_max:
+        times = []
+        results = init_results(max_slice_height)
+        for k in range(sample_count):
+            t_0 = time.time()
+            for d in range(min_slice_height, max_slice_height + 1):
+                load_crystal(k, d)
+                for n in range(ensemble_size):
+                    # init for t=0
+                    p = create_particle(d+2)
+                    is_filtered = True
+                    for t in range(simulated_steps):
+                        p = step(p)
+                        if p[0] == 1:
+                            is_filtered = False
+                            break
+                    if not is_filtered:
+                        results[d] += 1
+                    # print(f"d: {d}, result: {is_filtered}")
+                    #print_grid_to_file(k, d)
 
-          # guesstimating eta
-          times.append(time.time() - t_0)
-          avg = sum(times) / (k+1)
-          projected_total_duration = avg * sample_count
-          estimated_eta = projected_total_duration - (k * avg)
-          print(f"{k}: Using a_up = {a_up_min}, simulation finish eta: {round(estimated_eta / 60)} minutes")
+            # guesstimating eta
+            times.append(time.time() - t_0)
+            avg = sum(times) / (k+1)
+            projected_total_duration = avg * sample_count
+            estimated_eta = projected_total_duration - (k * avg)
+            print(
+                f"{k}: Using a_up = {a_up_min}, simulation finish eta: {round(estimated_eta / 60)} minutes")
 
-      keys = list(results.keys())
-      norm_vals = [x / (sample_count * ensemble_size)
-                  for x in list(results.values())]
+        keys = list(results.keys())
+        norm_vals = [x / (sample_count * ensemble_size)
+                     for x in list(results.values())]
 
-      save_plot(init_plot(keys, norm_vals))
-      plt.show()
-      save_plot_data(results, norm_vals)
-      a_up_min += 0.02
-      a_up_min = np.round(a_up_min,2)
+        save_plot(init_plot(keys, norm_vals))
+        plt.show()
+        save_plot_data(results, norm_vals)
+        a_up_min += 0.02
+        a_up_min = np.round(a_up_min, 2)
 
 
 def create_particle(srow):
