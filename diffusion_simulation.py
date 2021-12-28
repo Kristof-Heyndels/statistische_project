@@ -16,8 +16,9 @@ sample_width = 250
 sample_height = 800
 starting_row = 1
 
-a_up = 0.12  # prob to move upwards, for a = 0.2 we have a_up = 2*a_remaining
+a_up_min = 0.4  # prob to move upwards, for a = 0.2 we have a_up = 2*a_remaining
 # defining all steps
+a_up_max = 0.5
 step_no_step = [0, 0]
 step_ldiag_up = [-1, -1]
 step_rdiag_up = [-1, 1]
@@ -31,45 +32,44 @@ remaining_steps = (step_no_step, step_down, step_left, step_right,
 
 
 def main():
-    global a_up
-    while a_up <= 0.5:
-        times = []
-        results = init_results(max_slice_height)
-        for k in range(sample_count):
-            t_0 = time.time()
-            for d in range(min_slice_height, max_slice_height + 1):
-                load_crystal(k, d)
-                for n in range(ensemble_size):
-                    # init for t=0
-                    p = create_particle(d+2)
-                    is_filtered = True
-                    for t in range(simulated_steps):
-                        p = step(p)
-                        if p[0] == 1:
-                            is_filtered = False
-                            break
-                    if not is_filtered:
-                        results[d] += 1
-                    # print(f"d: {d}, result: {is_filtered}")
-                    #print_grid_to_file(k, d)
+  global a_up_min
+  while a_up_min <= a_up_max:
+      times = []
+      results = init_results(max_slice_height)
+      for k in range(sample_count):
+          t_0 = time.time()
+          for d in range(min_slice_height, max_slice_height + 1):
+              load_crystal(k, d)
+              for n in range(ensemble_size):
+                  # init for t=0
+                  p = create_particle(d+2)
+                  is_filtered = True
+                  for t in range(simulated_steps):
+                      p = step(p)
+                      if p[0] == 1:
+                          is_filtered = False
+                          break
+                  if not is_filtered:
+                      results[d] += 1
+                  # print(f"d: {d}, result: {is_filtered}")
+                  #print_grid_to_file(k, d)
 
-            # guesstimating eta
-            times.append(time.time() - t_0)
-            avg = sum(times) / (k+1)
-            projected_total_duration = avg * sample_count
-            estimated_eta = projected_total_duration - (k * avg)
-            print(
-                f"{k}: Using a_up = {a_up}, simulation finish eta: {round(estimated_eta / 60)} minutes")
+          # guesstimating eta
+          times.append(time.time() - t_0)
+          avg = sum(times) / (k+1)
+          projected_total_duration = avg * sample_count
+          estimated_eta = projected_total_duration - (k * avg)
+          print(f"{k}: Using a_up = {a_up_min}, simulation finish eta: {round(estimated_eta / 60)} minutes")
 
-        keys = list(results.keys())
-        norm_vals = [x / (sample_count * ensemble_size)
-                     for x in list(results.values())]
+      keys = list(results.keys())
+      norm_vals = [x / (sample_count * ensemble_size)
+                  for x in list(results.values())]
 
-        save_plot(init_plot(keys, norm_vals))
-        plt.show()
-        save_plot_data(results, norm_vals)
-        a_up += 0.02
-        a_up = np.round(a_up, 2)
+      save_plot(init_plot(keys, norm_vals))
+      plt.show()
+      save_plot_data(results, norm_vals)
+      a_up_min += 0.02
+      a_up_min = np.round(a_up_min,2)
 
 
 def create_particle(srow):
@@ -78,7 +78,7 @@ def create_particle(srow):
 
 def step(p):
     #print(f"initial p: {p}")
-    if np.random.uniform(0, 1) < a_up:
+    if np.random.uniform(0, 1) < a_up_min:
         step = [-1, 0]
     else:
         step = remaining_steps[np.random.randint(0, 8, dtype=int)]
@@ -190,7 +190,7 @@ def save_plot(fig):
     #dirname = os.path.dirname(__file__)
     dirname = ""
     filepath = os.path.join(
-        dirname, f'/content/drive/MyDrive/statistische/sp_transfer_plots/adh_prob_{adhesion_prob}/bias_{a_up}/thickness_{max_slice_height}/ensemble_{ensemble_size}/')
+        dirname, f'/content/drive/MyDrive/statistische/sp_transfer_plots/adh_prob_{adhesion_prob}/bias_{a_up_min}/thickness_{max_slice_height}/ensemble_{ensemble_size}/')
 
     # creating dir
     if not os.path.exists(os.path.dirname(filepath)):
@@ -207,7 +207,7 @@ def save_plot_data(res, norm):
     #dirname = os.path.dirname(__file__)
     dirname = ""
     filepath = os.path.join(
-        dirname, f'/content/drive/MyDrive/statistische/sp_transfer_plots/adh_prob_{adhesion_prob}/bias_{a_up}/thickness_{max_slice_height}/ensemble_{ensemble_size}/')
+        dirname, f'/content/drive/MyDrive/statistische/sp_transfer_plots/adh_prob_{adhesion_prob}/bias_{a_up_min}/thickness_{max_slice_height}/ensemble_{ensemble_size}/')
     keys = list(res.keys())
     vals = list(res.values())
 
