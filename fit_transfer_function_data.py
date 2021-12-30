@@ -77,6 +77,8 @@ def init_plot():
     plt.xticks(fontsize=40)
     plt.yticks(fontsize=40)
     plt.legend(fontsize=40)
+    plt.gca().set_xlim(left=1, right=50) 
+    plt.gca().set_ylim(bottom=0) 
     return plt.gcf()
 
 
