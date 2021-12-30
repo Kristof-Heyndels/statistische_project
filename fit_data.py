@@ -1,5 +1,5 @@
 import os
-import pandas
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
@@ -14,18 +14,25 @@ bias_max = 0.50
 
 def main():
     b = bias_min
+    k = (0,50,0)
     while b <= bias_max:
         bias = "{:#.2g}".format(b)
         df = load_data(bias)
         x = np.array(df['sample_width'])  
         y = np.array(df['norm_counts'])
 
-        popt, pcov = curve_fit(func, x, y, bounds=([0.9999999,-1,0],[1,0,50]))        
+        popt, pcov = curve_fit(func, x, y, bounds=([0.9999999,-1,0],[1,0,50]))   
+        save_fit_params(popt, bias)
+
+        if popt[1] <= k[1]:
+            k = (b,popt[1],popt[2]) 
+
         plt.plot(x, func(x, *popt), label=f"bias {bias}") 
 
         b += 0.02
         b = np.round(b, 2) 
 
+    print(k)
     save_plot(init_plot())
 
 
@@ -41,8 +48,27 @@ def load_data(b):
         dirname, f'sp_transfer_plots/adh_prob_{adh_prob}/bias_{b}/thickness_{thickness}/ensemble_{ensemble}/')
 
     with open(f'{filepath}steps_{simulated_steps}.csv', 'r') as file:
-        return pandas.read_csv(file, delimiter = ';', names=['sample_width', 'counts', 'norm_counts'])
+        return pd.read_csv(file, delimiter = ';', names=['sample_width', 'counts', 'norm_counts'])
         
+
+def save_fit_params(popt, b):
+    dirname = os.path.dirname(__file__)
+    #dirname = "/content/drive/MyDrive/statistische"
+    filepath = os.path.join(
+        dirname, f'sp_transfer_plots/adh_prob_{adh_prob}/bias_{b}/thickness_{thickness}/ensemble_{ensemble}/')
+
+    # creating dir
+    if not os.path.exists(os.path.dirname(filepath)):
+        try:
+            os.makedirs(os.path.dirname(filepath))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
+    with open(f'{filepath}fit_for_steps_{simulated_steps}.csv', 'w') as file:
+            file.write('l;k;x_0\n')
+            file.write(f'{popt[0]};{popt[1]};{popt[2]}\n')
+
 
 def init_plot():
     plt.gcf().set_size_inches(60, 30)
@@ -51,7 +77,6 @@ def init_plot():
     plt.xticks(fontsize=40)
     plt.yticks(fontsize=40)
     plt.legend(fontsize=40)
-
     return plt.gcf()
 
 
