@@ -5,13 +5,6 @@ import os
 import time
 import matplotlib.pyplot as plt
 
-<<<<<<< HEAD
-sample_count = 50
-ensemble_size = 1
-min_slice_height = 5
-max_slice_height = 5
-simulated_steps = pow(10, 3)
-=======
 sample_count = 1
 min_slice_height = 10
 max_slice_height = 10
@@ -19,7 +12,6 @@ a_up_min = 0.12  # prob to move upwards, for a = 0.2 we have a_up = 2*a_remainin
 a_up_max = 0.12
 incoming_flow = 10
 simulated_steps = 5 * pow(10, 3)
->>>>>>> 68256eb876ab017b86fafe0d648ff59273da42a1
 
 grid = []
 concentration = 0.4
@@ -45,10 +37,10 @@ def main():
     times = []
     for k in range(sample_count):
         t_0 = time.time()
-        for d in range(min_slice_height, max_slice_height + 1):            
+        for d in range(min_slice_height, max_slice_height + 1):
             global a_up_min
             a_up = a_up_min
-            while a_up  <= a_up_max:
+            while a_up <= a_up_max:
                 # init for t=0
                 load_crystal(k, d)
                 particles = []
@@ -59,8 +51,8 @@ def main():
 
                 outgoing_particles = 0
                 incoming_particles = incoming_flow
-                
-                for t in range(simulated_steps):     
+
+                for t in range(simulated_steps):
                     if (t % 100 == 0):
                         print(f"time: {t}")
 
@@ -70,8 +62,6 @@ def main():
                     incoming_flux = incoming_flow_adjusted / sample_width
                     outgoing_flux = outgoing_flow / sample_width
 
-<<<<<<< HEAD
-=======
                     flux.append(incoming_flux - outgoing_flux)
                     flow.append(outgoing_flow)
 
@@ -92,19 +82,18 @@ def main():
                             grid[p[0]][p[1]] = 9
                             #print(f"moved to {p} \n======")
                             if p[0] == 0:
-                                grid[p[0]][p[1]] = 0    
+                                grid[p[0]][p[1]] = 0
                                 outgoing_particles += 1
                                 particles[i] = particles[len(particles) - 1]
                                 particles.pop()
                         else:
                             break
-                
-                save_data(flow, flux,"{:#.2g}".format(a_up), d)
-                save_plot(init_plot(flow, flux),"{:#.2g}".format(a_up), d)
+
+                save_data(flow, flux, "{:#.2g}".format(a_up), d)
+                save_plot(init_plot(flow, flux), "{:#.2g}".format(a_up), d)
                 a_up += 0.02
                 a_up_min = np.round(a_up_min, 2)
 
->>>>>>> 68256eb876ab017b86fafe0d648ff59273da42a1
             #print_grid_to_file(k, d)
 
         # guesstimating eta
@@ -120,7 +109,7 @@ def create_particle(srow):
     p = [srow, scol]
     if grid[srow][scol] == 0:
         return [p, True]
-    return [[-1,-1], False]
+    return [[-1, -1], False]
 
 
 def step(p, a_up):
@@ -169,7 +158,7 @@ def load_crystal(k, h):
                         row.append(int(char))
             elif height > sample_height:
                 break
-                
+
             else:
                 row = np.zeros(sample_width, dtype=int)
             grid.append(np.array(row))
@@ -214,8 +203,7 @@ def print_grid_to_file(k, d, clean_file=True):
             file.write("\n")
 
 
-
-def save_data(flow,flux,b,d):
+def save_data(flow, flux, b, d):
     t = range(simulated_steps + 1)
 
     dirname = os.path.dirname(__file__)
@@ -232,35 +220,40 @@ def save_data(flow,flux,b,d):
                 raise
 
     with open(f'{filepath}flow_flux.csv', 'w') as file:
-            file.write('t;flow;flux\n')
-            for i in t:
-                file.write(f'{t[i]};{flow[i]};{flux[i]}\n')
+        file.write('t;flow;flux\n')
+        for i in t:
+            file.write(f'{t[i]};{flow[i]};{flux[i]}\n')
 
-#dummy function to hold example code
-def init_plot(flow, flux):    
+# dummy function to hold example code
+
+
+def init_plot(flow, flux):
     col1 = 'steelblue'
-    col2 = 'red'    
+    col2 = 'red'
 
-    fig,ax = plt.subplots()
+    fig, ax = plt.subplots()
     fig.set_size_inches(60, 30)
 
-    ax.scatter(range(simulated_steps + 1), flow, s=80, facecolors='none', edgecolors='b')
+    ax.scatter(range(simulated_steps + 1), flow, s=80,
+               facecolors='none', edgecolors='b')
     ax2 = ax.twinx()
-    ax2.scatter(range(simulated_steps + 1), flux, s=80, facecolors='none', edgecolors='r')
+    ax2.scatter(range(simulated_steps + 1), flux, s=80,
+                facecolors='none', edgecolors='r')
 
     ax.set_xlabel('Time', fontsize=70)
-    ax.set_ylabel('Flow', color=col1, fontsize=70)            
+    ax.set_ylabel('Flow', color=col1, fontsize=70)
     ax2.set_ylabel('Flux', color=col2, fontsize=70)
 
-    ax.tick_params(axis='x', labelsize=40) 
-    ax.tick_params(axis='y', labelsize=40) 
-    ax2.tick_params(axis='y', labelsize=40) 
+    ax.tick_params(axis='x', labelsize=40)
+    ax.tick_params(axis='y', labelsize=40)
+    ax2.tick_params(axis='y', labelsize=40)
 
     ax.set_xlim(left=0)
     ax.set_ylim(bottom=0)
     ax2.set_ylim(bottom=0)
 
     return fig
+
 
 def save_plot(fig, b, d):
     dirname = os.path.dirname(__file__)
@@ -276,6 +269,7 @@ def save_plot(fig, b, d):
                 raise
 
     fig.savefig(f'{filepath}flow_flux_scatter.png', dpi='figure')
+
 
 if __name__ == "__main__":
     main()

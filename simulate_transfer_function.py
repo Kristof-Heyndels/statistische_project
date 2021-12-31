@@ -189,7 +189,6 @@ def init_plot(keys, norms):
     return plt.gcf()
 
 
-
 def save_plot(fig):
     #dirname = os.path.dirname(__file__)
     dirname = "/content/drive/MyDrive/statistische"
