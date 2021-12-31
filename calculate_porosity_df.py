@@ -97,6 +97,7 @@ def save_data(p, l, df, k, s):
                 raise
 
     with open(f'{filepath}porosity.csv', 'w') as file:
+        file.write('sample;porosity;lambda_max;fractal_dimension')
         for i in range(len(p)):
             file.write(f'sample_{i};{p[i]};{l[i]};{df[i]};\n')
         file.write(f'avg;{sum(p) / k};{sum(l) / k};{sum(df) / k}')

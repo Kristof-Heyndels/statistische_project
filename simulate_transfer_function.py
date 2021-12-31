@@ -1,3 +1,5 @@
+### TRANSFER FUNCTION ###
+
 import numpy as np
 import os
 import time
@@ -137,18 +139,6 @@ def init_results(d):
     return res
 
 
-def init_plot(keys, norms):
-    plt.figure(figsize=(60, 30))
-    plt.xlabel('Sample Thickness', fontsize=50)
-    plt.xticks(fontsize=40)
-    plt.yticks(fontsize=40)
-    plt.ylabel('Transfer probablity', fontsize=50)
-    plt.xlim(-0.5, len(keys)-.5)
-
-    plt.bar(range(len(keys)), norms, tick_label=keys, width=0.9)
-    return plt.gcf()
-
-
 def print_grid():
     for i in range(len(grid)):
         print(grid[i])
@@ -187,11 +177,24 @@ def print_grid_to_file(k, d, clean_file=True):
             file.write("\n")
 
 
+def init_plot(keys, norms):
+    plt.figure(figsize=(60, 30))
+    plt.xlabel('Sample Thickness', fontsize=50)
+    plt.xticks(fontsize=40)
+    plt.yticks(fontsize=40)
+    plt.ylabel('Transfer probablity', fontsize=50)
+    plt.xlim(-0.5, len(keys)-.5)
+
+    plt.bar(range(len(keys)), norms, tick_label=keys, width=0.9)
+    return plt.gcf()
+
+
+
 def save_plot(fig):
     #dirname = os.path.dirname(__file__)
-    dirname = ""
+    dirname = "/content/drive/MyDrive/statistische"
     filepath = os.path.join(
-        dirname, f'/content/drive/MyDrive/statistische/sp_transfer_plots/adh_prob_{adhesion_prob}/bias_{a_up_min}/thickness_{max_slice_height}/ensemble_{ensemble_size}/')
+        dirname, f'sp_transfer_plots/adh_prob_{adhesion_prob}/bias_{a_up_min}/thickness_{max_slice_height}/ensemble_{ensemble_size}/')
 
     # creating dir
     if not os.path.exists(os.path.dirname(filepath)):
@@ -206,9 +209,9 @@ def save_plot(fig):
 
 def save_plot_data(res, norm):
     #dirname = os.path.dirname(__file__)
-    dirname = ""
+    dirname = "/content/drive/MyDrive/statistische"
     filepath = os.path.join(
-        dirname, f'/content/drive/MyDrive/statistische/sp_transfer_plots/adh_prob_{adhesion_prob}/bias_{a_up_min}/thickness_{max_slice_height}/ensemble_{ensemble_size}/')
+        dirname, f'sp_transfer_plots/adh_prob_{adhesion_prob}/bias_{a_up_min}/thickness_{max_slice_height}/ensemble_{ensemble_size}/')
     keys = list(res.keys())
     vals = list(res.values())
 

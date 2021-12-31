@@ -5,21 +5,29 @@ import os
 import time
 import matplotlib.pyplot as plt
 
+<<<<<<< HEAD
 sample_count = 50
 ensemble_size = 1
 min_slice_height = 5
 max_slice_height = 5
 simulated_steps = pow(10, 3)
+=======
+sample_count = 1
+min_slice_height = 10
+max_slice_height = 10
+a_up_min = 0.12  # prob to move upwards, for a = 0.2 we have a_up = 2*a_remaining
+a_up_max = 0.12
+incoming_flow = 10
+simulated_steps = 5 * pow(10, 3)
+>>>>>>> 68256eb876ab017b86fafe0d648ff59273da42a1
 
 grid = []
 concentration = 0.4
 adhesion_prob = 1
 sample_width = 250
-sample_height = 800
+sample_height = 15
 starting_row = 1
-incoming_flow = 5
 
-a_up = 0.2  # prob to move upwards, for a = 0.2 we have a_up = 2*a_remaining
 # defining all steps
 step_no_step = [0, 0]
 step_ldiag_up = [-1, -1]
@@ -35,41 +43,68 @@ remaining_steps = (step_no_step, step_down, step_left, step_right,
 
 def main():
     times = []
-    results = init_results(max_slice_height)
     for k in range(sample_count):
         t_0 = time.time()
-        for d in range(min_slice_height, max_slice_height + 1):
-            load_crystal(k, d)
-            # init for t=0
-            particles = []
-            outgoing_particles = 0
+        for d in range(min_slice_height, max_slice_height + 1):            
+            global a_up_min
+            a_up = a_up_min
+            while a_up  <= a_up_max:
+                # init for t=0
+                load_crystal(k, d)
+                particles = []
+                flux = []
+                flow = []
+                flux.append(incoming_flow / sample_width)
+                flow.append(0)
 
-            for t in range(simulated_steps):
-                # each time step, n amount of particles enter the experiment
-                for n in range(incoming_flow):
-                    particles.append(create_particle(d+5))
+                outgoing_particles = 0
+                incoming_particles = incoming_flow
+                
+                for t in range(simulated_steps):     
+                    if (t % 100 == 0):
+                        print(f"time: {t}")
 
-                # iterate over each particle, allowing it to take a single step
-                for i in range(len(particles)):
-                    if i < len(particles):
-                        p = particles[i]
-                        grid[p[0]][p[1]] = 0
-                        #print(f"====== \nmoving particle: {p} ... ")
-                        p = step(p)
-                        grid[p[0]][p[1]] = 9
-                        #print(f"moved to {p} \n======")
-                        if p[0] == 0:
-                            grid[p[0]][p[1]] = 0    
-                            outgoing_particles += 1
-                            particles[i] = particles[len(particles) - 1]
-                            particles.pop()
+                    outgoing_flow = outgoing_particles / (t + 1)
+                    incoming_flow_adjusted = incoming_particles / (t + 1)
 
-                    else:
-                        break
-            outgoing_flow = outgoing_particles / simulated_steps
-            print(
-                f"{outgoing_particles} Particles passed the filter. The outgoing flow is {outgoing_flow}.")
+                    incoming_flux = incoming_flow_adjusted / sample_width
+                    outgoing_flux = outgoing_flow / sample_width
 
+<<<<<<< HEAD
+=======
+                    flux.append(incoming_flux - outgoing_flux)
+                    flow.append(outgoing_flow)
+
+                    # each time step, n amount of particles enter the experiment
+                    for n in range(incoming_flow):
+                        particle, c = create_particle(sample_height - 1)
+                        if c:
+                            particles.append(particle)
+                            incoming_particles += 1
+
+                    # iterate over each particle, allowing it to take a single step
+                    for i in range(len(particles)):
+                        if i < len(particles):
+                            p = particles[i]
+                            grid[p[0]][p[1]] = 0
+                            #print(f"====== \nmoving particle: {p} ... ")
+                            p = step(p, a_up)
+                            grid[p[0]][p[1]] = 9
+                            #print(f"moved to {p} \n======")
+                            if p[0] == 0:
+                                grid[p[0]][p[1]] = 0    
+                                outgoing_particles += 1
+                                particles[i] = particles[len(particles) - 1]
+                                particles.pop()
+                        else:
+                            break
+                
+                save_data(flow, flux,"{:#.2g}".format(a_up), d)
+                save_plot(init_plot(flow, flux),"{:#.2g}".format(a_up), d)
+                a_up += 0.02
+                a_up_min = np.round(a_up_min, 2)
+
+>>>>>>> 68256eb876ab017b86fafe0d648ff59273da42a1
             #print_grid_to_file(k, d)
 
         # guesstimating eta
@@ -77,23 +112,18 @@ def main():
         avg = sum(times) / (k+1)
         projected_total_duration = avg * sample_count
         estimated_eta = projected_total_duration - (k * avg)
-        print(
-            f"{k}: Using a_up = {a_up}, simulation finish eta: {round(estimated_eta / 60)} minutes")
-
-        keys = list(results.keys())
-        norm_vals = [x / (sample_count * ensemble_size)
-                     for x in list(results.values())]
-
-        #save_plot(init_plot(keys, norm_vals))
-        # plt.show()
-        #save_plot_data(results, norm_vals)
+        #print(f"{k}: Using a_up = {a_up}, simulation finish eta: {round(estimated_eta / 60)} minutes")
 
 
 def create_particle(srow):
-    return [srow, np.random.randint(0, sample_width, dtype=int)]
+    scol = np.random.randint(0, sample_width, dtype=int)
+    p = [srow, scol]
+    if grid[srow][scol] == 0:
+        return [p, True]
+    return [[-1,-1], False]
 
 
-def step(p):
+def step(p, a_up):
     #print(f"initial p: {p}")
     if np.random.uniform(0, 1) < a_up:
         step = [-1, 0]
@@ -113,8 +143,8 @@ def check_collision_in_path(p, step):
     ncol = p[1]+step[1]
 
     #print(f"stepping from {p} using step {step} to {[nrow,ncol]}")
-    if nrow >= 0 and nrow < sample_height - 1 \
-            and ncol >= 0 and ncol < sample_width - 1 \
+    if nrow >= 0 and nrow < sample_height \
+            and ncol >= 0 and ncol < sample_width \
             and grid[nrow][ncol] == 0:
         return False
     return True
@@ -137,29 +167,13 @@ def load_crystal(k, h):
                 for char in line:
                     if not char == '\n':
                         row.append(int(char))
+            elif height > sample_height:
+                break
+                
             else:
                 row = np.zeros(sample_width, dtype=int)
             grid.append(np.array(row))
             height += 1
-
-
-def init_results(d):
-    res = {}
-    for i in range(min_slice_height, d + 1):
-        res[i] = 0
-    return res
-
-
-def init_plot(keys, norms):
-    plt.figure(figsize=(60, 30))
-    plt.xlabel('Sample Thickness', fontsize=50)
-    plt.xticks(fontsize=40)
-    plt.yticks(fontsize=40)
-    plt.ylabel('Transfer probablity', fontsize=50)
-    plt.xlim(-0.5, len(keys)-.5)
-
-    plt.bar(range(len(keys)), norms, tick_label=keys, width=0.9)
-    return plt.gcf()
 
 
 def print_grid():
@@ -200,11 +214,14 @@ def print_grid_to_file(k, d, clean_file=True):
             file.write("\n")
 
 
-def save_plot(fig):
-    #dirname = os.path.dirname(__file__)
-    dirname = ""
+
+def save_data(flow,flux,b,d):
+    t = range(simulated_steps + 1)
+
+    dirname = os.path.dirname(__file__)
+    #dirname = "/content/drive/MyDrive/statistische"
     filepath = os.path.join(
-        dirname, f'/content/drive/MyDrive/statistische/sp_transfer_plots/adh_prob_{adhesion_prob}/bias_{a_up}/thickness_{max_slice_height}/ensemble_{ensemble_size}/')
+        dirname, f'flow_plots/bias_{b}/sample_thickness_{d}/')
 
     # creating dir
     if not os.path.exists(os.path.dirname(filepath)):
@@ -214,17 +231,42 @@ def save_plot(fig):
             if exc.errno != errno.EEXIST:
                 raise
 
-    fig.savefig(f'{filepath}steps_{simulated_steps}.png', dpi='figure')
+    with open(f'{filepath}flow_flux.csv', 'w') as file:
+            file.write('t;flow;flux\n')
+            for i in t:
+                file.write(f'{t[i]};{flow[i]};{flux[i]}\n')
 
+#dummy function to hold example code
+def init_plot(flow, flux):    
+    col1 = 'steelblue'
+    col2 = 'red'    
 
-def save_plot_data(res, norm):
-    #dirname = os.path.dirname(__file__)
-    dirname = ""
+    fig,ax = plt.subplots()
+    fig.set_size_inches(60, 30)
+
+    ax.scatter(range(simulated_steps + 1), flow, s=80, facecolors='none', edgecolors='b')
+    ax2 = ax.twinx()
+    ax2.scatter(range(simulated_steps + 1), flux, s=80, facecolors='none', edgecolors='r')
+
+    ax.set_xlabel('Time', fontsize=70)
+    ax.set_ylabel('Flow', color=col1, fontsize=70)            
+    ax2.set_ylabel('Flux', color=col2, fontsize=70)
+
+    ax.tick_params(axis='x', labelsize=40) 
+    ax.tick_params(axis='y', labelsize=40) 
+    ax2.tick_params(axis='y', labelsize=40) 
+
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+    ax2.set_ylim(bottom=0)
+
+    return fig
+
+def save_plot(fig, b, d):
+    dirname = os.path.dirname(__file__)
+    #dirname = "/content/drive/MyDrive/statistische"
     filepath = os.path.join(
-        dirname, f'/content/drive/MyDrive/statistische/sp_transfer_plots/adh_prob_{adhesion_prob}/bias_{a_up}/thickness_{max_slice_height}/ensemble_{ensemble_size}/')
-    keys = list(res.keys())
-    vals = list(res.values())
-
+        dirname, f'flow_plots/bias_{b}/sample_thickness_{d}/')
     # creating dir
     if not os.path.exists(os.path.dirname(filepath)):
         try:
@@ -233,10 +275,7 @@ def save_plot_data(res, norm):
             if exc.errno != errno.EEXIST:
                 raise
 
-    with open(f'{filepath}steps_{simulated_steps}.csv', 'w') as file:
-        for i in range(len(keys)):
-            file.write(f'{keys[i]};{vals[i]};{norm[i]}\n')
-
+    fig.savefig(f'{filepath}flow_flux_scatter.png', dpi='figure')
 
 if __name__ == "__main__":
     main()
