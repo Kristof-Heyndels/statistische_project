@@ -10,8 +10,8 @@ min_slice_height = 10
 max_slice_height = 10
 a_up_min = 0.12  # prob to move upwards, for a = 0.2 we have a_up = 2*a_remaining
 a_up_max = 0.12
-incoming_flow = 10
-simulated_steps = 5 * pow(10, 3)
+incoming_flow = 250
+simulated_steps = 3 * pow(10, 3)
 
 grid = []
 concentration = 0.4
@@ -46,6 +46,10 @@ def main():
                 particles = []
                 flux = []
                 flow = []
+
+                tracked_path = []          
+                tracked_particle = [-1,-1]
+
                 flux.append(incoming_flow / sample_width)
                 flow.append(0)
 
@@ -64,7 +68,7 @@ def main():
 
                     flux.append(incoming_flux - outgoing_flux)
                     flow.append(outgoing_flow)
-
+            
                     # each time step, n amount of particles enter the experiment
                     for n in range(incoming_flow):
                         particle, c = create_particle(sample_height - 1)
@@ -72,14 +76,28 @@ def main():
                             particles.append(particle)
                             incoming_particles += 1
 
+                    #when equilibrium is reached   
+                    if t == 2000:
+                        tracked_particle = particles[np.random.randint(0,len(particles), dtype=int)]
+                        tp = [-1,-1]
+                        tp[0],tp[1] = tracked_particle[0],tracked_particle[1]
+                        tracked_path.append(tracked_particle)
+                    
                     # iterate over each particle, allowing it to take a single step
                     for i in range(len(particles)):
                         if i < len(particles):
                             p = particles[i]
+
+                            if p == tracked_particle:   
+                                new_position = [-1,-1]
+                                new_position[0], new_position[1] = p[0],p[1]
+                                tracked_path.append(new_position)          
+
                             grid[p[0]][p[1]] = 0
                             #print(f"====== \nmoving particle: {p} ... ")
                             p = step(p, a_up)
                             grid[p[0]][p[1]] = 9
+
                             #print(f"moved to {p} \n======")
                             if p[0] == 0:
                                 grid[p[0]][p[1]] = 0
@@ -88,13 +106,14 @@ def main():
                                 particles.pop()
                         else:
                             break
-
+                
+                print(compute_MSD(tracked_path))
                 save_data(flow, flux, "{:#.2g}".format(a_up), d)
                 save_plot(init_plot(flow, flux), "{:#.2g}".format(a_up), d)
                 a_up += 0.02
                 a_up_min = np.round(a_up_min, 2)
 
-            #print_grid_to_file(k, d)
+            print_grid_to_file(k, d)
 
         # guesstimating eta
         times.append(time.time() - t_0)
@@ -102,7 +121,6 @@ def main():
         projected_total_duration = avg * sample_count
         estimated_eta = projected_total_duration - (k * avg)
         #print(f"{k}: Using a_up = {a_up}, simulation finish eta: {round(estimated_eta / 60)} minutes")
-
 
 def create_particle(srow):
     scol = np.random.randint(0, sample_width, dtype=int)
@@ -117,7 +135,7 @@ def step(p, a_up):
     if np.random.uniform(0, 1) < a_up:
         step = [-1, 0]
     else:
-        step = remaining_steps[np.random.randint(0, 8, dtype=int)]
+        step = remaining_steps[np.random.randint(0, len(remaining_steps), dtype=int)]
 
     #print(f"has_collision = {has_collision}")
     if not check_collision_in_path(p, step):
@@ -137,6 +155,16 @@ def check_collision_in_path(p, step):
             and grid[nrow][ncol] == 0:
         return False
     return True
+
+
+def compute_MSD(path):
+    totalsize=len(path)
+    msd=[]
+    for i in range(totalsize-1):
+        j=i+1
+        msd.append(np.sum((np.array(path[0:-j])-np.array(path[j::]))**2)/float(totalsize-j))
+
+    return np.array(msd)
 
 
 def load_crystal(k, h):
@@ -223,8 +251,6 @@ def save_data(flow, flux, b, d):
         file.write('t;flow;flux\n')
         for i in t:
             file.write(f'{t[i]};{flow[i]};{flux[i]}\n')
-
-# dummy function to hold example code
 
 
 def init_plot(flow, flux):
