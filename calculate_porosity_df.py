@@ -7,8 +7,8 @@ sample_width = 250
 crystal_height = 400
 grid = []
 
-sample_adh_probs = [1, 0.5, 0.1, 0.05, 0.02, 0.01]
-#sample_adh_probs = [1]
+#sample_adh_probs = [1, 0.5, 0.1, 0.05, 0.02, 0.01]
+sample_adh_probs = [0.01]
 
 
 def main():
@@ -97,7 +97,7 @@ def save_data(p, l, df, k, s):
                 raise
 
     with open(f'{filepath}porosity.csv', 'w') as file:
-        file.write('sample;porosity;lambda_max;fractal_dimension')
+        file.write('sample;porosity;lambda_max;fractal_dimension\n')
         for i in range(len(p)):
             file.write(f'sample_{i};{p[i]};{l[i]};{df[i]};\n')
         file.write(f'avg;{sum(p) / k};{sum(l) / k};{sum(df) / k}')
