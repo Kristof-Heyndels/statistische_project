@@ -7,10 +7,10 @@ from matplotlib import colors
 grid = []
 row_size = 800
 col_size = 250
-allowed_zone_height = row_size * 0.05
+dentric_height = 1
+allowed_zone_height = row_size  * 0.1
 concentration = 0.4
 adhesion_prob = 0.01
-dentric_height = 1
 working_volume = dentric_height + allowed_zone_height * col_size
 desired_crystal_size = 400
 desired_samples = 50
@@ -149,8 +149,8 @@ def print_grid_to_file(k, clean_file=True):
     global adhesion_prob
     global concentration
 
-    #dirname = os.path.dirname(__file__)
-    dirname = ""
+    dirname = os.path.dirname(__file__)
+    #dirname = ""
     filepath = os.path.join(
         dirname, f'material_S={adhesion_prob}_f={concentration}/')
 
