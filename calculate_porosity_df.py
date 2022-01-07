@@ -1,14 +1,14 @@
 import os
 import numpy as np
 
-sample_count = 50
-concentration = 0.4
+sample_count = 10
+concentration = 0.1
 sample_width = 250
 crystal_height = 400
 grid = []
 
 #sample_adh_probs = [1, 0.5, 0.1, 0.05, 0.02, 0.01]
-sample_adh_probs = [0.01]
+sample_adh_probs = [1]
 
 
 def main():

@@ -29,7 +29,7 @@ step_ldiag_down = [1, -1]
 step_rdiag_down = [1, 1]
 step_left = [0, -1]
 step_right = [0, 1]
-remaining_steps = (step_down, step_left, step_right,
+remaining_steps = (step_no_step, step_down, step_left, step_right,
                    step_ldiag_up, step_ldiag_down, step_rdiag_up, step_rdiag_down)
 
 
@@ -155,16 +155,6 @@ def check_collision_in_path(p, step):
             and grid[nrow][ncol] == 0:
         return False
     return True
-
-
-def compute_MSD(path):
-    totalsize=len(path)
-    msd=[]
-    for i in range(totalsize-1):
-        j=i+1
-        msd.append(np.sum((np.array(path[0:-j])-np.array(path[j::]))**2)/float(totalsize-j))
-
-    return np.array(msd)
 
 
 def load_crystal(k, h):
